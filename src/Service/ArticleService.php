@@ -2,12 +2,13 @@
 
 namespace App\Service;
 
+use Symfony\Component\HttpFoundation\RequestStack;
+
 class ArticleService
 {
     // ArticleService.php ou équivalent
     public function loadArticles(): \Generator
     {
-//        echo str_repeat(' ', 2);
         for ($i = 1; $i <= 20; $i++) {
             ob_flush();
             flush();

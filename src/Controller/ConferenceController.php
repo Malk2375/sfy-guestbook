@@ -12,7 +12,7 @@ use Symfony\Component\HttpFoundation\StreamedJsonResponse;
 
 class ConferenceController extends AbstractController
 {
-    private $articleService;
+    private ArticleService $articleService;
     public function __construct(ArticleService $articleService)
     {
         $this->articleService = $articleService;
@@ -20,6 +20,7 @@ class ConferenceController extends AbstractController
     #[Route('/', name: 'home_page')]
     public function index(Request $request): Response
     {
+//        $request->getSession()->set('attribute-name', 'attribute-value');
         dump($request);
         $greet ='';
         if ($name = $request->query->get('hello')) {
