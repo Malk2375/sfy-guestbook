@@ -18,12 +18,9 @@
             <h1>
                 <a href="{{ path('homepage') }}">Guestbook </a>
             </h1>
-{#            {% for conference in conferences %}#}
-{#                <a href="{{ path('conference', { id: conference.id })}}">{{ conference }}</a>#}
-{#            {% endfor %}#}
             <ul>
                 {% for conference in conferences %}
-                    <li><a href="{{ path('conference', { id: conference.id })}}">{{ conference.city }}</a></li>
+                    <li><a href="{{ path('conference', { slug: conference.slug })}}">{{ conference.city }}</a></li>
                 {% endfor %}
             </ul>
             <hr/>
