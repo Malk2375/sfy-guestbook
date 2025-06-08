@@ -2,13 +2,19 @@
 
 namespace App\Controller;
 
+use App\Entity\Comment;
 use App\Entity\Conference;
+use App\Form\CommentFormType;
 use App\Repository\CommentRepository;
 use App\Repository\ConferenceRepository;
+use Doctrine\ORM\EntityManagerInterface;
+use Random\RandomException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Symfony\Component\HttpFoundation\File\Exception\FileException;
 
 class ConferenceController extends AbstractController
 {
@@ -76,6 +82,10 @@ class ConferenceController extends AbstractController
 //    }
 
 
+    public function __construct(private readonly EntityManagerInterface $entityManager)
+    {
+    }
+
     /**
      * @param ConferenceRepository $conferenceRepository
      * @return Response
@@ -84,7 +94,6 @@ class ConferenceController extends AbstractController
     public function index(ConferenceRepository $conferenceRepository): Response
     {
             $conferences = $conferenceRepository->findAll();
-//            dd($conferences);
         return new Response($this->render('conference/index.html.twig', [
             'conferences' => $conferences,
         ]));
@@ -95,20 +104,45 @@ class ConferenceController extends AbstractController
      * @param Request $request
      * @param Conference $conference
      * @param CommentRepository $commentRepository
-     * @param ConferenceRepository $conferenceRepository
+     * @param string $photoDir
      * @return Response
+     * @throws RandomException
      */
     #[Route('/conference/{slug}', name: 'conference')]
-    public function show(Request $request, Conference $conference, CommentRepository $commentRepository, ConferenceRepository $conferenceRepository): Response
+    public function show(
+        Request $request,
+        Conference $conference,
+        CommentRepository $commentRepository,
+        #[Autowire('%photo_dir%')] string $photoDir
+    ): Response
     {
-         $offset = max(0, $request->query->getInt('offset', 0));
-         $paginator = $commentRepository->getCommentPaginator($conference, $offset);
-         return new Response($this->render('conference/show.html.twig', [
+        $comment = new Comment();
+        $form = $this->createForm(CommentFormType::class, $comment);
+        $form->handleRequest($request);
+        if ($form->isSubmitted() && $form->isValid()) {
+            $comment->setConference($conference);
+            if ($photo = $form['photo']->getData()) {
+                $filename = bin2hex(random_bytes(6)).'.'.$photo->guessExtension();
+                try {
+                    $photo->move($photoDir, $filename);
+                } catch (FileException $e) {
+                    // GIVE UP , NOT ABLE TO UPLOAD
+                }
+                $comment->setPhotoFilename($filename);
+            }
+            $this->entityManager->persist($comment);
+            $this->entityManager->flush();
+            return $this->redirectToRoute('conference', ['slug' => $conference->getSlug()]);
+        }
+        $offset = max(0, $request->query->getInt('offset', 0));
+        $paginator = $commentRepository->getCommentPaginator($conference, $offset);
+        return new Response($this->render('conference/show.html.twig', [
 //             'conferences' => $conferenceRepository->findAll(),
-             'conference' => $conference,
-             'comments' => $paginator,
-             'previous' => $offset - CommentRepository::PAGINATOR_PER_PAGE,
-             'next' => min(count($paginator), $offset + CommentRepository::PAGINATOR_PER_PAGE),
-         ]));
+            'conference' => $conference,
+            'comments' => $paginator,
+            'previous' => $offset - CommentRepository::PAGINATOR_PER_PAGE,
+            'next' => min(count($paginator), $offset + CommentRepository::PAGINATOR_PER_PAGE),
+            'comment_form' => $form,
+        ]));
     }
 }
