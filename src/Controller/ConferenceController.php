@@ -7,6 +7,7 @@ use App\Entity\Conference;
 use App\Form\CommentFormType;
 use App\Repository\CommentRepository;
 use App\Repository\ConferenceRepository;
+use App\SpamChecker;
 use Doctrine\ORM\EntityManagerInterface;
 use Random\RandomException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -15,6 +16,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\File\Exception\FileException;
+use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 
 class ConferenceController extends AbstractController
 {
@@ -107,13 +109,15 @@ class ConferenceController extends AbstractController
      * @param string $photoDir
      * @return Response
      * @throws RandomException
+     * @throws TransportExceptionInterface
      */
     #[Route('/conference/{slug}', name: 'conference')]
     public function show(
         Request $request,
         Conference $conference,
         CommentRepository $commentRepository,
-        #[Autowire('%photo_dir%')] string $photoDir
+        #[Autowire('%photo_dir%')] string $photoDir,
+        SpamChecker $spamChecker,
     ): Response
     {
         $comment = new Comment();
@@ -131,6 +135,15 @@ class ConferenceController extends AbstractController
                 $comment->setPhotoFilename($filename);
             }
             $this->entityManager->persist($comment);
+            $context = [
+                'user_ip' => $request->getClientIp(),
+                'user_agent' => $request->headers->get('use-agent'),
+                'referrer' => $request->headers->get('referer'),
+                'permalink' => $request->getUri()
+            ];
+            if (2 === $spamChecker->getSpamScore($comment, $context)){
+                throw new \RuntimeException('We do not accept SPAM here !');
+            }
             $this->entityManager->flush();
             return $this->redirectToRoute('conference', ['slug' => $conference->getSlug()]);
         }
