@@ -4,14 +4,17 @@ namespace App;
 
 use App\Entity\Comment;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Symfony\Contracts\HttpClient\Exception\ClientExceptionInterface;
+use Symfony\Contracts\HttpClient\Exception\RedirectionExceptionInterface;
+use Symfony\Contracts\HttpClient\Exception\ServerExceptionInterface;
 use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class SpamChecker
 {
-    private $endpoint;
+    private string $endpoint;
     public function __construct(
-        private HttpClientInterface $client,
+        private readonly HttpClientInterface     $client,
 //        string $askimetKey,
         #[Autowire('%env(ASKIMET_KEY)%')] string $askimetKey
     ){
@@ -48,6 +51,7 @@ class SpamChecker
         if (isset($headers['x-askismet-debug-help'][0])){
             throw new \RuntimeException(sprintf('Unable to check for spam : %s (%s)', $content, $headers['x-askismet-debug-help'][0]));
         }
+
         return 'true' === $content ? 1 : 0;
     }
 }
