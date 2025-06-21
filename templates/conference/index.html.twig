@@ -9,8 +9,9 @@
 </style>
 
 <div class="example-wrapper">
+    <h2>Give your feedback!</h2>
     {% for conference in conferences %}
-        <h4>{{ conference }}</h4>
+        <h5>{{ conference }}</h5>
         <p>
             <a href="{{ path('conference', { slug: conference.slug }) }}">View</a>
         </p>

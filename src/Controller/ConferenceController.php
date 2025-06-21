@@ -95,7 +95,7 @@ class ConferenceController extends AbstractController
     #[Route('/', name: 'homepage')]
     public function index(ConferenceRepository $conferenceRepository): Response
     {
-            $conferences = $conferenceRepository->findAll();
+        $conferences = $conferenceRepository->findAll();
         return new Response($this->render('conference/index.html.twig', [
             'conferences' => $conferences,
         ]));
@@ -107,6 +107,7 @@ class ConferenceController extends AbstractController
      * @param Conference $conference
      * @param CommentRepository $commentRepository
      * @param string $photoDir
+     * @param SpamChecker $spamChecker
      * @return Response
      * @throws RandomException
      * @throws TransportExceptionInterface

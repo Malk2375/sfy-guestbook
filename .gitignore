@@ -21,3 +21,4 @@
 /.idea/
 /migrations/
 /public/uploads
+/config/secrets/test/

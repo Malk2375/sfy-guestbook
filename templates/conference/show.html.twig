@@ -9,8 +9,9 @@
     </style>
 
     <div class="example-wrapper">
-        <h1> {{ conference }} Conference</h1>
+        <h5>{{ conference }} Conference</h5>
         {% if comments|length > 0 %}
+            <div>There are {{ comments|length }} comments.</div>
             {% for comment in comments %}
                 {% if comment.photofilename %}
                     <img src="{{ asset('uploads/photos/' ~ comment.photofilename)
