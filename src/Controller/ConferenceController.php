@@ -100,6 +100,12 @@ class ConferenceController extends AbstractController
             'conferences' => $conferences,
         ]));
     }
+    #[Route('/tester', name: 'homepage2')]
+    public function indexTest(): Response
+    {
+        dd(dirname(__DIR__,2).'/public/images/under-construction.png');
+    }
+
 
 
     /**
@@ -136,15 +142,15 @@ class ConferenceController extends AbstractController
                 $comment->setPhotoFilename($filename);
             }
             $this->entityManager->persist($comment);
-            $context = [
-                'user_ip' => $request->getClientIp(),
-                'user_agent' => $request->headers->get('use-agent'),
-                'referrer' => $request->headers->get('referer'),
-                'permalink' => $request->getUri()
-            ];
-            if (2 === $spamChecker->getSpamScore($comment, $context)){
-                throw new \RuntimeException('We do not accept SPAM here !');
-            }
+//            $context = [
+//                'user_ip' => $request->getClientIp(),
+//                'user_agent' => $request->headers->get('use-agent'),
+//                'referrer' => $request->headers->get('referer'),
+//                'permalink' => $request->getUri()
+//            ];
+//            if (2 === $spamChecker->getSpamScore($comment, $context)){
+//                throw new \RuntimeException('We do not accept SPAM here !');
+//            }
             $this->entityManager->flush();
             return $this->redirectToRoute('conference', ['slug' => $conference->getSlug()]);
         }

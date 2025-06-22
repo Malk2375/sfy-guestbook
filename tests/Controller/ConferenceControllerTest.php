@@ -3,6 +3,7 @@
 namespace App\Tests\Controller;
 
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\BrowserKit\Exception\LogicException;
 
 class ConferenceControllerTest extends WebTestCase
 {
@@ -17,13 +18,13 @@ class ConferenceControllerTest extends WebTestCase
     public function testConferencePage(): void
     {
         $client = static::createClient();
-        $crawler = $client->request('GET', '/');
+        $crawler = $client->request('GET', '/conference/toulouse-2020');
 
         // Vérifie combien d'éléments <h4> sont présents
         dump($crawler->filter('h5')->count());
 
         // Vérifie que tu as bien 3 éléments <h4>
-        $this->assertCount(2, $crawler->filter('h5'));
+        $this->assertCount(1, $crawler->filter('h5'));
         $client->clickLink('View');
 
         $this->assertPageTitleContains('Toulouse');
@@ -33,19 +34,32 @@ class ConferenceControllerTest extends WebTestCase
             return $node->text();
         });
         dump($titles);
-        $this->assertSelectorExists('div:contains("No comments")');
+        $comments = $crawler->filter('div')->each(function ($node) {
+            return $node->text();
+        });
+        dump($comments);
+
+        $this->assertSelectorExists('div:contains("There are 2 comments.")');
     }
-//
-//    public function testConferencePage(): void
-//    {
-//        $client = static::createClient();
-//        $crawler = $client->request('GET', '/');
-//        $this->assertCount(2, $crawler->filter('h5'));
-////        $client->clickLink('View');
-////        $this->assertPageTitleContains('Toulouse');
-////        $this->assertResponseIsSuccessful();
-////        $this->assertSelectorExists('h5');
-////        $this->assertSelectorTextContains('h5', 'Toulouse 2020');
-////        $this->assertSelectorExists('div:contains("There are 1 comments")');
-//    }
+
+    public function testCommentSubmission(): void
+    {
+        $client = static::createClient();
+        $client->request('GET', '/conference/toulouse-2020');
+        dump($client->getResponse()->getContent());
+        $client->submitForm('Submit', [
+            'comment_form[author]' => 'Malek Testeur',
+            'comment_form[email]' => 'me@automat.ed',
+            'comment_form[text]' => 'Test comment',
+            'comment_form[photo]' => dirname(__DIR__, 2).'/public/images/under-construction.png',
+        ]);
+        $this->assertResponseRedirects();
+
+        $client->followRedirect();
+        // Après la redirection
+        dump($client->getResponse()->getContent());
+
+//        $this->assertResponseRedirects();
+        $this->assertSelectorExists('div:contains("There are 3 comments.")');
+    }
 }
